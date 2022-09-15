@@ -1,0 +1,16 @@
+{
+  "name": "express-dto-router",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "class-validator": "^0.13.2",
+    "express": "^4.18.1"
+  }
+}
