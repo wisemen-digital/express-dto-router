@@ -1,16 +1,33 @@
 {
   "name": "express-dto-router",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "version": "0.0.1",
+  "description": "A router package for checking DTO's",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "example": "examples"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
+    "express": "^4.18.1",
     "class-validator": "^0.13.2",
-    "express": "^4.18.1"
-  }
+    "class-transformer": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.18",
+    "@types/express": "^4.17.14"
+
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/appwise-labs/express-dto-router.git"
+  },
+  "author": "Joren Vandeweyer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/appwise-labs/express-dto-router/issues"
+  },
+  "homepage": "https://github.com/appwise-labs/express-dto-router#readme"
 }
