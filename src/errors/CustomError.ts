@@ -26,6 +26,10 @@ export class CustomError <T extends string> extends Error {
     this.status = CustomError.errors[error].status
   }
 
+  setDesc (desc: string) {
+    this.message = desc
+  }
+
   get response (): ErrorResponse {
     return {
       error: this.name,
