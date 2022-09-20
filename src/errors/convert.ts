@@ -2,6 +2,8 @@ import { ValidationError } from 'class-validator'
 import { ConvertedValidationError } from './types'
 
 export function convertValidationError (errors: ValidationError[], path = '$'): ConvertedValidationError[] {
+  if (!errors) return errors
+
   const convertedErrors: ConvertedValidationError[] = []
 
   for (const error of errors) {

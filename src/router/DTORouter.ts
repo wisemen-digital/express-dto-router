@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 
-import { Request, RequestParamHandler, Response, Router } from 'express'
+import { NextFunction, Request, RequestParamHandler, Response, Router } from 'express'
 import { DTO } from './DTO'
 import { CustomError } from '../errors/CustomError'
 import { Constructor, MiddlewareHandler, RequestHandler, RouterHandler } from './types'
@@ -12,7 +12,7 @@ export class DTORouter {
     return error
   }
 
-  private async handleError (res: Response, error: Error): Promise<void> {
+  static async handleError (res: Response, error: Error): Promise<void> {
     if (error instanceof CustomError) {
       res.status(error.status ?? 400).json(error.response)
     } else {
@@ -37,7 +37,7 @@ export class DTORouter {
           res.json(result)
         })
         .catch(error => {
-          void this.handleError(res, DTORouter.mapError(error))
+          void DTORouter.handleError(res, DTORouter.mapError(error))
         })
     }
 
@@ -103,8 +103,19 @@ export class DTORouter {
     this.router.param(name, (req, res, next, param, name) => {
       handler(req, res, next, param, name)
         .catch(error => {
-          void this.handleError(res, error)
+          void DTORouter.handleError(res, error)
         })
     })
+  }
+}
+
+export function DTOErrorHandler () {
+  return async (error: Error, req: Request, res: Response, next: NextFunction) => {
+    console.log(error)
+    if (!res.headersSent) {
+      await DTORouter.handleError(res, error)
+    } else {
+      next()
+    }
   }
 }

@@ -1,9 +1,10 @@
 import { ValidationError } from 'class-validator'
 import { convertValidationError } from './convert'
+import { defaultErrors } from './defaultErrors'
 import { ErrorList, ErrorResponse } from './types'
 
 export class CustomError <T extends string> extends Error {
-  static errors: ErrorList
+  static errors: ErrorList = defaultErrors
 
   name: T
   id?: string

@@ -3,6 +3,7 @@ import { Request, Response } from 'express'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import { CustomError } from '../errors/CustomError'
+import { DTORouter } from './DTORouter'
 
 export abstract class DTO {
   validate (req: Request, res: Response, next: (r: this) => void): void {
@@ -13,15 +14,13 @@ export abstract class DTO {
     validate(this, { whitelist: true, forbidNonWhitelisted: true })
       .then(errors => {
         if (errors.length > 0) {
-          const error = new CustomError(errors)
-
-          res.status(error.status ?? 400).json(error.response)
+          DTORouter.handleError(res, new CustomError(errors))
         } else {
           next(this)
         }
       })
       .catch(e => {
-        res.status(400).json({ error: e.message })
+        DTORouter.handleError(res, e)
       })
   }
 }

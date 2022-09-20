@@ -1,4 +1,8 @@
 export const defaultErrors = {
+  validation_error: {
+    status: 400,
+    description: 'Validation error'
+  },
   invalid_uuid: {
     description: 'The uuid provided is not a valid uuid',
     status: 400
