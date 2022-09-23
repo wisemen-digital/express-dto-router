@@ -23,6 +23,10 @@ export class CustomError <T extends string> extends Error {
     this.name = error
     this.id = id
 
+    if (!(error in CustomError.errors)) {
+      throw new Error(`Error ${error} is not defined`)
+    }
+
     this.message = CustomError.errors[error].description
     this.status = CustomError.errors[error].status
   }
