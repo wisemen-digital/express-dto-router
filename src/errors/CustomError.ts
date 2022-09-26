@@ -33,6 +33,8 @@ export class CustomError <T extends string> extends Error {
 
   setDesc (desc: string) {
     this.message = desc
+
+    return this
   }
 
   get response (): ErrorResponse {
