@@ -1,19 +1,20 @@
-export interface ConvertedValidationError {
-  path: string
-  error: string
-  error_description: string
+export interface ErrorContent {
+  code: string
+  detail: string
+  title?: string
+  id?: string
+  status?: number
+  source?: { pointer: string }
+  meta?: unknown
 }
 
 export interface ErrorResponse {
-  error: string
-  error_description: string
-  error_validation?: ConvertedValidationError[]
-  error_id?: string
+  errors: ErrorContent[]
 }
 
 export interface ErrorList {
   [key: string]: {
-    description: string
     status: number
+    detail: string
   }
 }

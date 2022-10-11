@@ -1,10 +1,10 @@
 import { ValidationError } from 'class-validator'
-import { ConvertedValidationError } from './types'
+import { ErrorContent } from './types'
 
-export function convertValidationError (errors: ValidationError[], path = '$'): ConvertedValidationError[] {
+export function convertValidationError (errors: ValidationError[], path = '$'): ErrorContent[] {
   if (!errors) return errors
 
-  const convertedErrors: ConvertedValidationError[] = []
+  const convertedErrors: ErrorContent[] = []
 
   for (const error of errors) {
     const isArray = Array.isArray(error.target)
@@ -14,9 +14,9 @@ export function convertValidationError (errors: ValidationError[], path = '$'): 
     if (error.children === undefined || error.children.length === 0) {
       if (error.constraints !== undefined) {
         convertedErrors.push({
-          path: jsonpath,
-          error: 'validation_error',
-          error_description: Object.values(error.constraints)[0]
+          source: { pointer: jsonpath },
+          code: 'validation_error',
+          detail: Object.values(error.constraints)[0]
         })
       }
     } else {
