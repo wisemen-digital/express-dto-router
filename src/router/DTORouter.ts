@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 
-import { NextFunction, Request, RequestParamHandler, Response, Router } from 'express'
+import { NextFunction, Request, RequestHandler, RequestParamHandler, Response, Router } from 'express'
 import { DTO } from './DTO'
 import { CustomError } from '../errors/CustomError'
-import { Constructor, MiddlewareHandler, RequestHandler, RouterHandler } from './types'
+import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } from './types'
 
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
@@ -28,7 +28,7 @@ export class DTORouter {
   private handle <T extends DTO> (
     req: Request,
     res: Response,
-    handler: RequestHandler<T>,
+    handler: CustomRequestHandler<T>,
     DTOClass?: Constructor<T>
   ): void {
     const helper = (dto?: T): void => {
@@ -51,9 +51,9 @@ export class DTORouter {
   private prepare <T extends DTO> (handlers: RouterHandler<T>): {
     DTOClass?: Constructor<T>
     middleware: MiddlewareHandler[]
-    handler: RequestHandler<T>
+    handler: CustomRequestHandler<T>
   } {
-    const handler = handlers.pop() as RequestHandler<T>
+    const handler = handlers.pop() as CustomRequestHandler<T>
     const middleware = handlers as [Constructor<DTO>, ...MiddlewareHandler[]]|[...MiddlewareHandler[]]
 
     let DTOClass: Constructor<T>|undefined
@@ -93,7 +93,7 @@ export class DTORouter {
     })
   }
 
-  use (...handlers: MiddlewareHandler[]|[string, ...MiddlewareHandler[]]): void {
+  use (...handlers: MiddlewareHandler[]|[string, ...Array<RequestHandler|RequestHandler[]>]|[string, ...MiddlewareHandler[]]): void {
     const [path, ...middleware] = handlers as [string, ...MiddlewareHandler[]]
 
     this.router.use(path, ...middleware)
