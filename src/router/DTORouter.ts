@@ -4,6 +4,7 @@ import { NextFunction, Request, RequestHandler, RequestParamHandler, Response, R
 import { DTO } from './DTO'
 import { CustomError } from '../errors/CustomError'
 import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } from './types'
+import { randomUUID } from 'crypto'
 
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
@@ -16,9 +17,14 @@ export class DTORouter {
     if (error instanceof CustomError) {
       res.status(error.status ?? 400).json(error.response)
     } else {
+      error['transaction_id'] = randomUUID()
+
       res.status(500).json({
-        error: error.name,
-        error_description: error.message
+        errors: [{
+          id: error['transaction_id'],
+          code: error.name,
+          detail: error.message
+        }]
       })
 
       return Promise.reject(error)
