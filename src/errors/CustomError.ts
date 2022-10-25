@@ -41,7 +41,7 @@ export class CustomError <T extends string> extends Error {
   }
 
   setDesc (desc: string) {
-    this.message = desc
+    this.errors[0].detail = desc
 
     return this
   }
