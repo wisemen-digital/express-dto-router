@@ -7,7 +7,10 @@ import { DTORouter } from './DTORouter'
 
 export abstract class DTO {
   validate (req: Request, res: Response, next: (r: this) => void): void {
-    const dto = plainToInstance(this.constructor as unknown as any, req.body)
+
+    const dto = req.method === 'GET'
+    ? plainToInstance(this.constructor as any, req.query)
+    : plainToInstance(this.constructor as any, req.body)
 
     Object.assign(this, dto)
 
