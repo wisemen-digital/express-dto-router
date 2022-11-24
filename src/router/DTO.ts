@@ -9,8 +9,8 @@ export abstract class DTO {
   validate (req: Request, res: Response, next: (r: this) => void): void {
 
     const dto = req.method === 'GET'
-    ? plainToInstance(this.constructor as any, req.query)
-    : plainToInstance(this.constructor as any, req.body)
+      ? plainToInstance(this.constructor as any, req.query)
+      : plainToInstance(this.constructor as any, req.body)
 
     Object.assign(this, dto)
 
