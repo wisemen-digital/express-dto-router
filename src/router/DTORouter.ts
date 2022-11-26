@@ -116,9 +116,9 @@ export class DTORouter {
 }
 
 export function DTOErrorHandler () {
-  return async (error: Error, req: Request, res: Response, next: NextFunction) => {
+  return (error: Error, req: Request, res: Response, next: NextFunction) => {
     if (!res.headersSent) {
-      await DTORouter.handleError(res, error)
+      DTORouter.handleError(res, error)
     } else {
       next()
     }
