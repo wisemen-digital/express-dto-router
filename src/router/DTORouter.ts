@@ -119,6 +119,7 @@ export function DTOErrorHandler () {
   return (error: Error, req: Request, res: Response, next: NextFunction) => {
     if (!res.headersSent) {
       DTORouter.handleError(res, error)
+        .catch(err => next(err))
     } else {
       next()
     }
