@@ -13,13 +13,17 @@ export class DTORouter {
     return error
   }
 
-  static async handleError (res: Response, error: Error): Promise<void> {
+  static async handleError (res: Response, err: Error): Promise<void> {
+    const error = this.mapError(err)
+
     if (error instanceof CustomError) {
       res.status(error.status ?? 400).json(error.response)
     } else {
       error['transaction_id'] = randomUUID()
 
-      res.status(500).json({
+      const status = error['status'] ?? 500
+
+      res.status(status).json({
         errors: [{
           id: error['transaction_id'],
           code: error.name,
@@ -43,7 +47,7 @@ export class DTORouter {
           res.json(result)
         })
         .catch(error => {
-          void DTORouter.handleError(res, DTORouter.mapError(error))
+          void DTORouter.handleError(res, error)
         })
     }
 
