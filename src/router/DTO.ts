@@ -3,24 +3,19 @@ import { Request, Response } from 'express'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import { CustomError } from '../errors/CustomError'
-import { DTORouter } from './DTORouter'
 
 export abstract class DTO {
-  validate (req: Request, res: Response, next: (r: this) => void): void {
+  async validate (req: Request, res: Response): Promise<this> {
     const dto = plainToInstance(this.constructor as unknown as any, req.body)
 
     Object.assign(this, dto)
 
-    validate(this, { whitelist: true, forbidNonWhitelisted: true })
-      .then(errors => {
-        if (errors.length > 0) {
-          DTORouter.handleError(res, new CustomError(errors))
-        } else {
-          next(this)
-        }
-      })
-      .catch(e => {
-        DTORouter.handleError(res, e)
-      })
+    const errors = await validate(this, { whitelist: true, forbidNonWhitelisted: true })
+
+    if (errors.length > 0) {
+      throw new CustomError(errors)
+    }
+
+    return this
   }
 }

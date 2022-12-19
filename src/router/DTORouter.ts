@@ -35,27 +35,17 @@ export class DTORouter {
     }
   }
 
-  private handle <T extends DTO> (
+  private async handle <T extends DTO> (
     req: Request,
     res: Response,
     handler: CustomRequestHandler<T>,
     DTOClass?: Constructor<T>
-  ): void {
-    const helper = (dto?: T): void => {
-      handler(req, dto)
-        .then(result => {
-          res.json(result)
-        })
-        .catch(error => {
-          void DTORouter.handleError(res, error)
-        })
-    }
+  ): Promise<void> {
+    const dto = DTOClass != null ? await new DTOClass().validate(req, res) : undefined
 
-    if (DTOClass !== null && DTOClass !== undefined) {
-      new DTOClass().validate(req, res, dto => helper(dto))
-    } else {
-      helper()
-    }
+    const result = await handler(req, dto)
+
+    res.json(result)
   }
 
   private prepare <T extends DTO> (handlers: RouterHandler<T>): {
@@ -82,24 +72,27 @@ export class DTORouter {
   get <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
     const { DTOClass, middleware, handler } = this.prepare(handlers)
 
-    this.router.get(path, ...middleware, (req: Request, res: Response) => {
+    this.router.get(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, handler, DTOClass)
+        .catch(err => next(err))
     })
   }
 
   post <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
     const { DTOClass, middleware, handler } = this.prepare(handlers)
 
-    this.router.post(path, ...middleware, (req: Request, res: Response) => {
+    this.router.post(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, handler, DTOClass)
+        .catch(err => next(err))
     })
   }
 
   delete <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
     const { DTOClass, middleware, handler } = this.prepare(handlers)
 
-    this.router.delete(path, ...middleware, (req: Request, res: Response) => {
+    this.router.delete(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, handler, DTOClass)
+        .catch(err => next(err))
     })
   }
 
@@ -112,10 +105,7 @@ export class DTORouter {
   param (name: string, handler: RequestParamHandler): void {
     this.router.param(name, (req, res, next, param, name) => {
       handler(req, res, next, param, name)
-        .catch(error => {
-          DTORouter.handleError(res, error)
-            .catch(err => next(err))
-        })
+        .catch(error => next(error))
     })
   }
 }
@@ -126,7 +116,7 @@ export function DTOErrorHandler () {
       DTORouter.handleError(res, error)
         .catch(err => next(err))
     } else {
-      next()
+      next(error)
     }
   }
 }
