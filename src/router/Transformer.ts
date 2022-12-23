@@ -25,5 +25,5 @@ export abstract class Transformer <T, S> {
     return entities.map(entity => this.transform(entity))
   }
 
-  abstract transform (_entity: T): S
+  protected abstract transform (_entity: T): S
 }
