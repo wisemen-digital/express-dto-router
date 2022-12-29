@@ -5,6 +5,7 @@ import { DTO } from './DTO'
 import { CustomError } from '../errors/CustomError'
 import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } from './types'
 import { randomUUID } from 'crypto'
+import {validateUuid} from "../middleware/ValidateUuidMiddleware";
 
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
@@ -107,6 +108,10 @@ export class DTORouter {
       handler(req, res, next, param, name)
         .catch(error => next(error))
     })
+  }
+
+  uuidParam(name: string): void {
+    this.param(name, validateUuid)
   }
 }
 
