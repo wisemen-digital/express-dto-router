@@ -106,7 +106,7 @@ export class DTORouter {
   param (name: string, handler: RequestParamHandler): void {
     this.router.param(name, (req, res, next, param, name) => {
       handler(req, res, next, param, name)
-        ?.catch(error => next(error))
+        ?.catch?.(error => next(error))
     })
   }
 
