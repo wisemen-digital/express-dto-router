@@ -7,11 +7,17 @@ import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } f
 import { randomUUID } from 'crypto'
 import {validateUuid} from "../middleware/ValidateUuidMiddleware";
 
-interface GroupRouteType <T extends DTO> {
+export interface RouteOptionsDto <T extends DTO> {
   path: string
   dto: Constructor<T>
   controller: (req: Request, dto: T) => Promise<unknown>
   groups?: string[]
+  middleware?: MiddlewareHandler[]
+}
+
+export interface RouteOptions {
+  path: string
+  controller: (req: Request) => Promise<unknown>
   middleware?: MiddlewareHandler[]
 }
 
@@ -106,17 +112,26 @@ export class DTORouter {
     })
   }
 
-  get2 <T extends DTO> (options: GroupRouteType<T>): void {
-    const { path, dto, groups, middleware, controller } = options
+  private desctructure <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions) {
+    return {
+      dto: undefined,
+      groups: undefined,
+      middleware: [],
+      ...options
+    }
+  }
 
-    this.router.get(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
+  get2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
+    const { path, dto, groups, middleware, controller } = this.desctructure(options)
+
+    this.router.get(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, controller, dto, groups)
         .catch(err => next(err))
     })
   }
 
-  post2 <T extends DTO> (options: GroupRouteType<T>): void {
-    const { path, dto, groups, middleware, controller } = options
+  post2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
+    const { path, dto, groups, middleware, controller } = this.desctructure(options)
 
     this.router.post(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, controller, dto, groups)
@@ -125,8 +140,8 @@ export class DTORouter {
   }
 
 
-  delete2 <T extends DTO> (options: GroupRouteType<T>): void {
-    const { path, dto, groups, middleware, controller } = options
+  delete2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
+    const { path, dto, groups, middleware, controller } = this.desctructure(options)
 
     this.router.delete(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, controller, dto, groups)

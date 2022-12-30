@@ -1,4 +1,4 @@
-export { DTORouter, DTOErrorHandler } from './router/DTORouter'
+export { DTORouter, DTOErrorHandler, RouteOptions, RouteOptionsDto } from './router/DTORouter'
 export { DTO } from './router/DTO'
 export { CustomError } from './errors/CustomError'
 export { defaultErrors } from './errors/defaultErrors'
