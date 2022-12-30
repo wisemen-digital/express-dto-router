@@ -7,6 +7,14 @@ import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } f
 import { randomUUID } from 'crypto'
 import {validateUuid} from "../middleware/ValidateUuidMiddleware";
 
+interface GroupRouteType <T extends DTO> {
+  path: string
+  dto: Constructor<T>
+  controller: (req: Request, dto: T) => Promise<unknown>
+  groups?: string[]
+  middleware?: MiddlewareHandler[]
+}
+
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
 
@@ -40,9 +48,10 @@ export class DTORouter {
     req: Request,
     res: Response,
     handler: CustomRequestHandler<T>,
-    DTOClass?: Constructor<T>
+    DTOClass?: Constructor<T>,
+    groups?: string[]
   ): Promise<void> {
-    const dto = DTOClass != null ? await new DTOClass().validate(req, res) : undefined
+    const dto = DTOClass != null ? await new DTOClass().validate(req, res, groups) : undefined
 
     const result = await handler(req, dto)
 
@@ -93,6 +102,34 @@ export class DTORouter {
 
     this.router.delete(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
       this.handle(req, res, handler, DTOClass)
+        .catch(err => next(err))
+    })
+  }
+
+  get2 <T extends DTO> (options: GroupRouteType<T>): void {
+    const { path, dto, groups, middleware, controller } = options
+
+    this.router.get(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
+      this.handle(req, res, controller, dto, groups)
+        .catch(err => next(err))
+    })
+  }
+
+  post2 <T extends DTO> (options: GroupRouteType<T>): void {
+    const { path, dto, groups, middleware, controller } = options
+
+    this.router.post(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
+      this.handle(req, res, controller, dto, groups)
+        .catch(err => next(err))
+    })
+  }
+
+
+  delete2 <T extends DTO> (options: GroupRouteType<T>): void {
+    const { path, dto, groups, middleware, controller } = options
+
+    this.router.delete(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
+      this.handle(req, res, controller, dto, groups)
         .catch(err => next(err))
     })
   }
