@@ -21,6 +21,16 @@ export interface RouteOptions {
   middleware?: MiddlewareHandler[]
 }
 
+export class ApiResponse {
+  constructor (
+    private fn: (res: Response) => void
+  ) {}
+
+  public execute (res: Response): void {
+    this.fn(res)
+  }
+}
+
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
 
@@ -61,7 +71,11 @@ export class DTORouter {
 
     const result = await handler(req, dto)
 
-    res.json(result)
+    if (result instanceof ApiResponse) {
+      result.execute(res)
+    } else {
+      res.json(result)
+    }
   }
 
   private prepare <T extends DTO> (handlers: RouterHandler<T>): {
