@@ -6,6 +6,7 @@ import { CustomError } from '../errors/CustomError'
 import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } from './types'
 import { randomUUID } from 'crypto'
 import {validateUuid} from "../middleware/ValidateUuidMiddleware";
+import {ApiResponse} from "./ApiResponse";
 
 export interface RouteOptionsDto <T extends DTO> {
   path: string
@@ -19,16 +20,6 @@ export interface RouteOptions {
   path: string
   controller: (req: Request) => Promise<unknown>
   middleware?: MiddlewareHandler[]
-}
-
-export class ApiResponse {
-  constructor (
-    private fn: (res: Response) => void
-  ) {}
-
-  public execute (res: Response): void {
-    this.fn(res)
-  }
 }
 
 export class DTORouter {
