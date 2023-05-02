@@ -1,10 +1,10 @@
-import { randomUUID } from 'crypto'
 import { NextFunction, Request, RequestHandler, RequestParamHandler, Response, Router } from 'express'
 import { CustomError } from '../errors/CustomError'
 import { validateUuid } from '../middleware/ValidateUuidMiddleware'
 import { ApiResponse } from './ApiResponse'
 import { DTO } from './DTO'
 import { HandleOptions, MiddlewareHandler, RouteOptions } from './types'
+import { captureException } from '@sentry/node'
 
 
 export class DTORouter {
@@ -20,7 +20,7 @@ export class DTORouter {
     if (error instanceof CustomError) {
       res.status(error.status ?? 400).json(error.response)
     } else {
-      error['transaction_id'] = randomUUID()
+      error['transaction_id'] = captureException(error)
 
       const status = error['status'] ?? 500
 
