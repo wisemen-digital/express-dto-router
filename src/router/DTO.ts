@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from 'express'
 import { validate } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 import { CustomError } from '../errors/CustomError'
 
 export abstract class DTO {
-  async validate (req: Request, res: Response, groups?: string[]): Promise<this> {
-    const dto = plainToInstance(this.constructor as unknown as any, req.body)
+  async validate (data: unknown, groups?: string[]): Promise<this> {
+    const dto = plainToInstance(this.constructor as unknown as any, data)
 
     Object.assign(this, dto)
 

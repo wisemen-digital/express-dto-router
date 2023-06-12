@@ -1,50 +1,26 @@
-/* eslint-disable max-len */
-
 import { NextFunction, Request, RequestHandler, RequestParamHandler, Response, Router } from 'express'
-import { DTO } from './DTO'
 import { CustomError } from '../errors/CustomError'
-import { Constructor, MiddlewareHandler, CustomRequestHandler, RouterHandler } from './types'
-import { randomUUID } from 'crypto'
-import {validateUuid} from "../middleware/ValidateUuidMiddleware";
+import { validateUuid } from '../middleware/ValidateUuidMiddleware'
+import { ApiResponse } from './ApiResponse'
+import { DTO } from './DTO'
+import { HandleOptions, MiddlewareHandler, RouteOptions } from './types'
+import { captureException } from '@sentry/node'
 
-export interface RouteOptionsDto <T extends DTO> {
-  path: string
-  dto: Constructor<T>
-  controller: (req: Request, dto: T) => Promise<unknown>
-  groups?: string[]
-  middleware?: MiddlewareHandler[]
-}
-
-export interface RouteOptions {
-  path: string
-  controller: (req: Request) => Promise<unknown>
-  middleware?: MiddlewareHandler[]
-}
-
-export class ApiResponse {
-  constructor (
-    private fn: (res: Response) => void
-  ) {}
-
-  public execute (res: Response): void {
-    this.fn(res)
-  }
-}
 
 export class DTORouter {
   readonly router: Router = Router({ mergeParams: true })
 
-  static mapError (error: Error): Error {
+  static mapError (error: Error, req: Request, res: Response): Error {
     return error
   }
 
-  static async handleError (res: Response, err: Error): Promise<void> {
-    const error = this.mapError(err)
+  static async handleError (err: Error, req: Request, res: Response): Promise<void> {
+    const error = this.mapError(err, req, res)
 
     if (error instanceof CustomError) {
       res.status(error.status ?? 400).json(error.response)
     } else {
-      error['transaction_id'] = randomUUID()
+      error['transaction_id'] = captureException(error)
 
       const status = error['status'] ?? 500
 
@@ -60,16 +36,20 @@ export class DTORouter {
     }
   }
 
-  private async handle <T extends DTO> (
-    req: Request,
-    res: Response,
-    handler: CustomRequestHandler<T>,
-    DTOClass?: Constructor<T>,
-    groups?: string[]
-  ): Promise<void> {
-    const dto = DTOClass != null ? await new DTOClass().validate(req, res, groups) : undefined
+  private async handle <BodyDTO extends DTO | undefined, QueryDTO extends DTO | undefined> (options: HandleOptions<BodyDTO, QueryDTO>): Promise<void> {
+    const { req, res, dtos } = options
 
-    const result = await handler(req, dto)
+    const BodyDTO = dtos?.body
+    const QueryDTO = dtos?.query
+
+    const body = BodyDTO == null ? undefined : await new BodyDTO().validate(req.body, dtos?.groups) as BodyDTO
+    const query = QueryDTO == null ? undefined : await new QueryDTO().validate(req.query, dtos?.groups) as QueryDTO
+
+    const result = await options.controller({
+      req,
+      body,
+      query
+    })
 
     if (result instanceof ApiResponse) {
       result.execute(res)
@@ -78,88 +58,39 @@ export class DTORouter {
     }
   }
 
-  private prepare <T extends DTO> (handlers: RouterHandler<T>): {
-    DTOClass?: Constructor<T>
-    middleware: MiddlewareHandler[]
-    handler: CustomRequestHandler<T>
-  } {
-    const handler = handlers.pop() as CustomRequestHandler<T>
-    const middleware = handlers as [Constructor<DTO>, ...MiddlewareHandler[]]|[...MiddlewareHandler[]]
+  get <BodyDTO extends DTO | undefined, QueryDTO extends DTO | undefined> (options: RouteOptions<BodyDTO, QueryDTO>): void {
+    const { path, middleware, ...handleOptions } = options
 
-    let DTOClass: Constructor<T>|undefined
-
-    if (middleware[0]?.prototype instanceof DTO) {
-      DTOClass = middleware.shift() as Constructor<T>
-    }
-
-    return {
-      DTOClass: DTOClass,
-      middleware: middleware as MiddlewareHandler[],
-      handler
-    }
-  }
-
-  get <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
-    const { DTOClass, middleware, handler } = this.prepare(handlers)
-
-    this.router.get(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, handler, DTOClass)
-        .catch(err => next(err))
+    this.router.get(path, ...middleware ?? [], (req: Request, res: Response, next: NextFunction) => {
+      this.handle({
+        req,
+        res,
+        ...handleOptions
+      }).catch(err => next(err))
     })
   }
 
-  post <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
-    const { DTOClass, middleware, handler } = this.prepare(handlers)
+  post <BodyDTO extends DTO | undefined, QueryDTO extends DTO | undefined> (options: RouteOptions<BodyDTO, QueryDTO>): void {
+    const { path, middleware, ...handleOptions } = options
 
-    this.router.post(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, handler, DTOClass)
-        .catch(err => next(err))
+    this.router.post(path, ...middleware ?? [], (req: Request, res: Response, next: NextFunction) => {
+      this.handle({
+        req,
+        res,
+        ...handleOptions
+      }).catch(err => next(err))
     })
   }
 
-  delete <T extends DTO> (path: string, ...handlers: RouterHandler<T>): void {
-    const { DTOClass, middleware, handler } = this.prepare(handlers)
+  delete <BodyDTO extends DTO | undefined, QueryDTO extends DTO | undefined> (options: RouteOptions<BodyDTO, QueryDTO>): void {
+    const { path, middleware, ...handleOptions } = options
 
-    this.router.delete(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, handler, DTOClass)
-        .catch(err => next(err))
-    })
-  }
-
-  private desctructure <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions) {
-    return {
-      dto: undefined,
-      groups: undefined,
-      middleware: [],
-      ...options
-    }
-  }
-
-  get2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
-    const { path, dto, groups, middleware, controller } = this.desctructure(options)
-
-    this.router.get(path, ...middleware, (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, controller, dto, groups)
-        .catch(err => next(err))
-    })
-  }
-
-  post2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
-    const { path, dto, groups, middleware, controller } = this.desctructure(options)
-
-    this.router.post(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, controller, dto, groups)
-        .catch(err => next(err))
-    })
-  }
-
-
-  delete2 <T extends DTO> (options: RouteOptionsDto<T>|RouteOptions): void {
-    const { path, dto, groups, middleware, controller } = this.desctructure(options)
-
-    this.router.delete(path, ...(middleware ?? []), (req: Request, res: Response, next: NextFunction) => {
-      this.handle(req, res, controller, dto, groups)
-        .catch(err => next(err))
+    this.router.delete(path, ...middleware ?? [], (req: Request, res: Response, next: NextFunction) => {
+      this.handle({
+        req,
+        res,
+        ...handleOptions
+      }).catch(err => next(err))
     })
   }
 
@@ -178,16 +109,5 @@ export class DTORouter {
 
   uuidParam(name: string): void {
     this.param(name, validateUuid)
-  }
-}
-
-export function DTOErrorHandler () {
-  return (error: Error, req: Request, res: Response, next: NextFunction) => {
-    if (!res.headersSent) {
-      DTORouter.handleError(res, error)
-        .catch(err => next(err))
-    } else {
-      next(error)
-    }
   }
 }
