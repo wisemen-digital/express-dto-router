@@ -1,6 +1,6 @@
 {
   "name": "@appwise/express-dto-router",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A router package for checking DTO's",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,7 @@
     "@sentry/node": "^7.50.0",
     "@sentry/tracing": "^7.50.0",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.13.2",
+    "class-validator": "^0.14.0",
     "express": "^4.18.2"
   },
   "devDependencies": {
